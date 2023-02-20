@@ -1,0 +1,142 @@
+
+-- Task-1.1
+
+??Analyzing Road Safety in the UK
+
+Project 1 : Analyzing Road Safety in the UK
+
+Create database UK_ROADSAFETY;
+Use UK_ROADSAFETY;
+
+CREATE or replace TABLE accident(
+accident_index VARCHAR(13),
+accident_severity INT
+);
+
+CREATE or replace TABLE vehicles(
+accident_index VARCHAR(13),
+vehicle_type VARCHAR(50)
+);
+
+
+CREATE or replace TABLE vehicle_types(
+vehicle_code INT,
+vehicle_type_name VARCHAR(50)
+);
+
+DROP TABLE accident;
+DROP TABLE vehicles;
+DROP TABLE vehicle_types;
+
+select * from accident;
+select * from vehicles;
+select * from vehicle_types;
+
+1. Calculate median for accident_severity caused by various "Motorcycle"
+
+WITH CTE3 AS (
+SELECT
+a.accident_severity AS accident_severity,
+v.vehicle_type AS vehicle_type_number,
+vt.vehicle_type_name AS label,
+ROW_NUMBER() OVER (PARTITION BY label ORDER BY accident_severity) AS 	rownumber,
+COUNT(1) OVER (PARTITION BY vehicle_type_name) AS count_of_severity
+FROM
+accident a
+LEFT OUTER JOIN vehicles v ON a.accident_index = v.accident_index
+LEFT OUTER JOIN vehicle_types vt ON v.vehicle_type = vt.vehicle_code
+WHERE
+vehicle_type_name LIKE '%otorcycle%')
+
+select LABEL,accident_severity,rownumber from CTE3 where rownumber between (count_of_severity+1)/2  and (count_of_severity+2)/2;
+
+////...................................................................................................................................;
+2. Evaluate accident severity and total accidents per vehicle type
+
+SELECT
+count(a.accident_index),a.accident_severity AS 	accident_severity,v.vehicle_type AS 	vehicle_type_number,vt.vehicle_type_name AS label
+FROM accident a
+LEFT OUTER JOIN vehicles v ON a.accident_index = v.accident_index
+LEFT OUTER JOIN vehicle_types vt ON v.vehicle_type = vt.vehicle_code
+group by 2,3,4
+
+......................................................................................................................//;
+
+3. Calculate average severity by vehical type;
+
+SELECT
+round(AVG(a.accident_severity)) AS    accident_severity,vt.vehicle_type_name AS Vehical_type
+FROM accident a
+LEFT OUTER JOIN vehicles v ON a.accident_index = v.accident_index
+LEFT OUTER JOIN vehicle_types vt ON v.vehicle_type = vt.vehicle_code
+group by 2;
+
+.......................................................................................................................//;
+
+4. Calcuate average severity and total accidents by motorcycle;
+
+SELECT
+Count(a.accident_index) as 	Total_accidents,round(AVG(a.accident_severity)) AS 	average_accident_severity,vt.vehicle_type_name AS Vehical_type
+FROM accident a
+LEFT OUTER JOIN vehicles v ON a.accident_index = v.accident_index
+LEFT OUTER JOIN vehicle_types vt ON v.vehicle_type = vt.vehicle_code
+where Vehical_type like '%otorcycle%'
+group by 3;
+
+
+-- Task-2.1
+
+??Analyzing the World Population
+
+Project 2:;
+
+
+CREATE DATABASE CIA_WORLD_FACTBOOK;
+USE CIA_WORLD_FACTBOOK;
+
+CREATE OR REPLACE TABLE facts (
+id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+`code` varchar(255) NOT NULL,
+name varchar(255) NOT NULL,
+area integer,
+area_land integer,
+area_water integer,
+population integer,
+population_growth float,
+birth_rate float,
+death_rate float,
+migration_rate float
+);
+
+
+create or replace file format my_csv_format
+type = csv
+record_delimiter = '\n'
+field_delimiter = ','
+skip_header = 1
+null_if = ('NULL', 'null')
+empty_field_as_null = true
+FIELD_OPTIONALLY_ENCLOSED_BY = '0x22';
+
+select * from facts;
+
+1. Which country has the highest population? ;
+Select name,sum(population) as total_population from facts group by name order by total_population desc limit 1;
+
+2. Which country has the least number of people?
+Select name,sum(population) as total_population from facts group by name order by total_population limit 1;
+
+3. Which country is witnessing the highest population growth?
+select name, population_growth from facts where population_growth = (select max(population_growth) from facts)
+
+
+4. Which country has an extraordinary number for the population?
+select name from facts
+where population_growth = (select min(population_growth) from facts);
+
+
+5. Which is the most densely populated country in the world? ;
+
+Select name from facts where area_land>100 and (population/area_land) = (select max(population/area_land) from facts)
+
+
